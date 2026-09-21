@@ -1,0 +1,211 @@
+[21/09/2026 12:23 p. m.] Popeye: #!/usr/bin/env python3
+
+import os
+import subprocess
+import json
+from datetime import datetime
+
+HISTORY_FILE = "history.json"
+
+
+def banner():
+    print(r"""
+   ██████╗ ██╗  ██╗██████╗  ██████╗ ███╗   ██╗
+  ██╔════╝ ╚██╗██╔╝██╔══██╗██╔═══██╗████╗  ██║
+  ██║  ███╗ ╚███╔╝ ██║  ██║██║   ██║██╔██╗ ██║
+  ██║   ██║ ██╔██╗ ██║  ██║██║   ██║██║╚██╗██║
+  ╚██████╔╝██╔╝ ██╗██████╔╝╚██████╔╝██║ ╚████║
+   ╚═════╝ ╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═══╝
+
+             GxDon-AI v0.1
+        Personal Security Assistant
+    """)
+
+
+def load_history():
+    if not os.path.exists(HISTORY_FILE):
+        return []
+
+    try:
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
+
+
+def save_history(history):
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, indent=2, ensure_ascii=False)
+
+
+def add_history(user, assistant):
+    history = load_history()
+
+    history.append({
+        "time": datetime.now().isoformat(),
+        "user": user,
+        "assistant": assistant
+    })
+
+    save_history(history)
+
+
+def system_info():
+    commands = [
+        ["Sistema", "uname -a"],
+        ["Usuario", "whoami"],
+        ["Directorio", "pwd"],
+        ["Python", "python3 --version"]
+    ]
+
+    print("\n=== Información del sistema ===\n")
+
+    for name, command in commands:
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True
+        )
+
+        print(f"{name}: {result.stdout.strip()}")
+
+
+def run_command(command):
+    print("\n[GxDon-AI] Ejecutando:\n")
+    print(command)
+    print()
+
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.stdout:
+            print(result.stdout)
+
+        if result.stderr:
+            print(result.stderr)
+
+    except subprocess.TimeoutExpired:
+        print("[!] El comando tardó demasiado.")
+
+
+def help_menu():
+    print("""
+Comandos disponibles:
+
+  help       Mostrar ayuda
+  info       Información del sistema
+  history    Mostrar historial
+  clear      Limpiar pantalla
+  exit       Salir
+
+Terminal:
+  !comando
+
+Ejemplo:
+
+  !ip addr
+  !ls
+  !python3 --version
+  !nmap --version
+
+Los comandos ejecutados deben utilizarse únicamente
+sobre equipos, redes o laboratorios que tengas
+autorización para analizar.
+""")
+
+
+def show_history():
+    history = load_history()
+
+    if not history:
+        print("\nNo existe historial.\n")
+        return
+
+    print("\n=== Historial ===\n")
+
+    for item in history[-20:]:
+        print(f"[{item['time']}]")
+        print(f"Tú: {item['user']}")
+        print(f"GxDon-AI: {item['assistant']}")
+        print("-" * 50)
+
+
+def assistant_response(message):
+
+    text = message.lower().strip()
+
+    responses = {
+        "hola": "Hola. Soy GxDon-AI. ¿Qué quieres analizar?",
+        "buenas": "Buenas. GxDon-AI listo.",
+        "quien eres": "Soy GxDon-AI, tu asistente personal de GxDon.",
+        "que puedes hacer":
+            "Puedo gestionar historial, consultar el sistema y ejecutar comandos que me indiques.",
+        "version": "GxDon-AI v0.1"
+    }
+
+    if text in responses:
+        return responses[text]
+
+    return (
+        "Todavía estoy en v0.1. "
+        "En próximas versiones incorporaré IA, "
+        "memoria avanzada e integración con GxTools."
+    )
+
+
+def main():
+
+    banner()
+
+    print("Escribe 'help' para ver los comandos.\n")
+
+    while True:
+
+        try:
+            message = input("GxDon-AI > ").strip()
+
+        except KeyboardInterrupt:
+            print("\n\nSaliendo...")
+            break
+
+        if not message:
+            continue
+
+        if message == "exit":
+            print("GxDon-AI cerrado.")
+            break
+
+        elif message == "help":
+            help_menu()
+
+        elif message == "info":
+            system_info()
+
+        elif message == "history":
+            show_history()
+
+        elif message == "clear":
+            os.system("clear")
+[21/09/2026 12:23 p. m.] Popeye: elif message.startswith("!"):
+            command = message[1:].strip()
+
+            if command:
+                run_command(command)
+
+        else:
+            response = assistant_response(message)
+
+            print(f"\nGxDon-AI: {response}\n")
+
+            add_history(message, response)
+
+
+if name == "main":
+    main()
